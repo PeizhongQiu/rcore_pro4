@@ -1,0 +1,57 @@
+arceos/crates/hypercraft/src/arch/x86_64/vmx/vcpu.rs
+VmxVcpu:
+- guest_regs
+- host_stack_top
+- vmcs
+- msr_bitmap
+- apic_timer
+- pending_events
+- 操作
+    - setup_msr_bitmap：拦截 IA32_APIC_BASE 和 所有 x2APIC MSR 访问。
+    - setup_vmcs(entry, ept_root)：对 vmcs 使用 vmclear 和 vmptrld。接着调用 setup_vmcs_host，setup_vmcs_guest(entry)，setup_vmcs_control(ept_root)
+    - setup_vmcs_host：读取 host 的状态，并使用 vmexit 将其写入 vmcs。host 的状态：IA32_PAT，IA32_EFER，CR0，CR3，CR4，ES_SELECTOR，CS_SELECTOR，SS_SELECTOR，DS_SELECTOR，FS_SELECTOR，GS_SELECTOR，FS_BASE，GS_BASE，TR_SELECTOR，TR_BASE，GDTR_BASE，IDTR_BASE，RIP，IA32_SYSENTER_ESP，IA32_SYSENTER_EIP，IA32_SYSENTER_CS。注意：RIP 写入的是 vmx_exit 函数地址。IA32_SYSENTER_ESP，IA32_SYSENTER_EIP，IA32_SYSENTER_CS 写入 0。
+    - setup_vmcs_guest(entry)：初始化 guest 状态。首先初始化 CR0，CR0_GUEST_HOST_MASK，CR0_READ_SHADOW，CR4，CR4_GUEST_HOST_MASK，CR4_READ_SHADOW。接着，设置 ES，CS，SS，DS，FS，GS，TR，LDTR 的选择子（0），基地址（0），限长（0xffff），访问权限。然后，设置 GDTR_BASE（0），GDTR_LIMIT（0xffff），IDTR_BASE（0），IDTR_LIMIT（0xffff）。最后设置 CR3（0），DR7（0x400），RSP（0），RIP（entry），RFLAGS（2），PENDING_DBG_EXCEPTIONS（0），IA32_SYSENTER_ESP（0），IA32_SYSENTER_EIP（0），IA32_SYSENTER_CS（0），INTERRUPTIBILITY_STATE（0），ACTIVITY_STATE（0），VMX_PREEMPTION_TIMER_VALUE（0），LINK_PTR（u64::MAX），IA32_DEBUGCTL（0），IA32_PAT（Msr::IA32_PAT），IA32_EFER（0）。
+    - setup_vmcs_control(ept_root)：
+        - 拦截 NMI 和 外部中断
+        - 拦截 I/O 指令，使用 MSR bitmap，开启 VM 控制的第二部分，取消拦截 CR3 读写
+        - 启用 EPT, RDTSCP, INVPCID, and unrestricted guest.
+        - Switch to 64-bit host, acknowledge interrupt info, switch IA32_PAT/IA32_EFER on VM exit.
+        - Load guest IA32_PAT/IA32_EFER on VM entry.
+        - 设置 VmcsControl64::EPTP
+        - 设置 VMEXIT_MSR_STORE_COUNT，VMEXIT_MSR_LOAD_COUNT，VMENTRY_MSR_LOAD_COUNT 为 0
+        - Pass-through exceptions, don't use I/O bitmap, set MSR bitmaps.
+    - vmx_launch
+        - 切换栈
+        - 读取设置的寄存器的值
+        - 调用 vmlaunch
+    - vmx_exit 
+        - 保存寄存器的值
+        - 将 rsp 保存到 r15，rdi
+        - 将 rsp 设置为 Vcpu::host_stack_top
+        - 调用 vmexit_handler
+        - 将 rsp 设置为 r15
+        - 恢复寄存器的值
+        - 调用 vmresume，回到虚拟机
+    - new
+        - 默认初始化 GeneralRegisters
+        - host_stack_top = 0
+        - vmcs VmxRegion::new(percpu.vmcs_revision_id, false)
+        - msr_bitmap passthrough_all
+        - apic_timer
+        - pending_events 容量为8
+        - setup_msr_bitmap
+        - setup_vmcs
+    - run
+        - 将 host_stack_top 写入 VmcsHostNW::RSP
+        - vmx_launch
+    - set_stack_pointer
+        - VmcsGuestNW::RSP.write(rsp).unwrap()
+    - advance_rip
+        - VmcsGuestNW::RIP 更新为 VmcsGuestNW::RIP.read() + instr_len
+    - inject_event
+        - pending_events.push_back((vector, err_code)
+    - set_interrupt_window
+        - 启用或关闭 interrupt_window 功能
+    - allow_interrupt
+        - 判断 guest 中断是否被阻塞
+    - check_pending_events
