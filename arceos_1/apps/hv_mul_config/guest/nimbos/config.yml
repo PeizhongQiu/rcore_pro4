@@ -1,0 +1,15 @@
+vm_count: 2
+vm0: 
+  id: 0
+  memory: 0x100_0000
+  vcpu_count: 1
+  io_apic: 1
+  HPET: 1
+  local_apic: 1
+vm1: 
+  id: 1
+  memory: 0x100_0000
+  vcpu_count: 1
+  io_apic: 1
+  HPET: 1
+  local_apic: 1
