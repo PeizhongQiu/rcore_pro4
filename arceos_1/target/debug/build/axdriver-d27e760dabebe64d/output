@@ -1,0 +1,4 @@
+cargo:rustc-cfg=bus="mmio"
+cargo:rustc-cfg=net_dev="virtio-net"
+cargo:rustc-cfg=block_dev="ramdisk"
+cargo:rustc-cfg=display_dev="virtio-gpu"

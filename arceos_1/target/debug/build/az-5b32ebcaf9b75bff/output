@@ -1,0 +1,6 @@
+$ mkdir -p "/home/wark/arceos/rcore_pro4/arceos/target/debug/build/az-5b32ebcaf9b75bff/out/try_track_caller"
+$ cd "/home/wark/arceos/rcore_pro4/arceos/target/debug/build/az-5b32ebcaf9b75bff/out/try_track_caller"
+$ printf '%s' "// try_tra"... > "/home/wark/arceos/rcore_pro4/arceos/target/debug/build/az-5b32ebcaf9b75bff/out/try_track_caller/try_track_caller.rs"
+$ cd "/home/wark/arceos/rcore_pro4/arceos/target/debug/build/az-5b32ebcaf9b75bff/out/try_track_caller" && "rustc" "try_track_caller.rs" "--emit=dep-info,metadata" >& /dev/null
+cargo:rustc-cfg=track_caller
+$ rm -r "/home/wark/arceos/rcore_pro4/arceos/target/debug/build/az-5b32ebcaf9b75bff/out/try_track_caller"
