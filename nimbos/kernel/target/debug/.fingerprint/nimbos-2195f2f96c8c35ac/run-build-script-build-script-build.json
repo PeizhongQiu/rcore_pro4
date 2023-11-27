@@ -1,1 +1,0 @@
-{"rustc":15887206025166922214,"features":"","target":0,"profile":0,"path":0,"deps":[[3561662410476592929,"build_script_build",false,4726589481333531610]],"local":[{"RerunIfChanged":{"output":"debug/build/nimbos-2195f2f96c8c35ac/output","paths":["../user/c/src","../user/rust/src",".makeargs"]}}],"rustflags":[],"metadata":0,"config":0,"compile_kind":0}
