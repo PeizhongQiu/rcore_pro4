@@ -245,62 +245,6 @@ pub struct ConfigFile {
     pub local_apic: usize,
 }
 
-// #[cfg(target_arch = "x86_64")]
-// pub fn setup_gpm(id: usize, config_file: ConfigFile) -> HyperResult<GuestPhysMemorySet> {
-//     // copy BIOS and guest images
-
-//     use libax::hv::HostVirtAddr;
-//     load_guest_image(BIOS_PADDR, BIOS_ENTRY, BIOS_SIZE, id);
-//     load_guest_image(GUEST_IMAGE_PADDR, GUEST_ENTRY, GUEST_IMAGE_SIZE, id);
-
-//     // create nested page table and add mapping
-//     let mut gpm = GuestPhysMemorySet::new()?;
-//     // let hpa_base:usize = virt_to_phys((gpa_as_mut_ptr(GUEST_PHYS_MEMORY_BASE + id * GUEST_PHYS_MEMORY_SIZE) as HostVirtAddr).into()).into();
-//     // let hpa_base = 0x26_8000;
-//     // info!("hpa_base {:x}",hpa_base);
-//     let mut guest_memory_regions = Vec::new();
-//     guest_memory_regions.push(GuestMemoryRegion {
-//         // RAM
-//         gpa: GUEST_PHYS_MEMORY_BASE,
-//         hpa: virt_to_phys((gpa_as_mut_ptr(GUEST_PHYS_MEMORY_BASE, id) as HostVirtAddr).into()).into(),
-//         // hpa: hpa_base,
-//         size: config_file.memory,
-//         flags: MappingFlags::READ | MappingFlags::WRITE | MappingFlags::EXECUTE,
-//     });
-//     if config_file.io_apic != 0 {
-//         guest_memory_regions.push(GuestMemoryRegion {
-//             // IO APIC
-//             gpa: 0xfec0_0000,
-//             hpa: unsafe { &IO_PHYS_MEMORY[id] as *const _ as usize },
-//             size: 0x1000,
-//             flags: MappingFlags::READ | MappingFlags::WRITE | MappingFlags::DEVICE,
-//         });
-//     }
-//     if config_file.HPET != 0 {
-//         guest_memory_regions.push(GuestMemoryRegion {
-//             // HPET
-//             gpa: 0xfed0_0000,
-//             hpa: 0xfed0_0000,
-//             size: 0x1000,
-//             flags: MappingFlags::READ | MappingFlags::WRITE | MappingFlags::DEVICE,
-//         });
-//     }
-//     if config_file.local_apic != 0 {
-//         guest_memory_regions.push(GuestMemoryRegion {
-//             // Local APIC
-//             gpa: 0xfee0_0000,
-//             hpa: unsafe { &LAPIC_PHYS_MEMORY[id] as *const _ as usize },
-//             size: 0x1000,
-//             flags: MappingFlags::READ | MappingFlags::WRITE | MappingFlags::DEVICE,
-//         });
-//     }
-    
-//     for r in guest_memory_regions.into_iter() {
-//         gpm.map_region(r.into())?;
-//     }
-//     Ok(gpm)
-// }
-
 #[cfg(target_arch = "x86_64")]
 pub fn setup_gpm(id: usize) -> HyperResult<GuestPhysMemorySet> {
     // copy BIOS and guest images

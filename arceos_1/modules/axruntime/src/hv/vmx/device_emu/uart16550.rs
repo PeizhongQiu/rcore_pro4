@@ -15,7 +15,10 @@ const LINE_STATUS_REG: u16 = 5;
 const MODEM_STATUS_REG: u16 = 6;
 const SCRATCH_REG: u16 = 7;
 
-const UART_FIFO_CAPACITY: usize = 16;
+const UART_FIFO_CAPACITY: usize = 32;
+
+use super::MAX_VMS;
+use super::all_virt_devices;
 
 bitflags::bitflags! {
     /// Line status flags
@@ -70,6 +73,9 @@ impl<const CAP: usize> Fifo<CAP> {
 pub struct Uart16550 {
     port_base: u16,
     fifo: Mutex<Fifo<UART_FIFO_CAPACITY>>,
+    id: usize,
+    int_en: Mutex<u8>,
+    pub baud_rate: usize,
 }
 
 impl PortIoDevice for Uart16550 {
@@ -85,21 +91,29 @@ impl PortIoDevice for Uart16550 {
         let ret = match port - self.port_base {
             DATA_REG => {
                 // read a byte from FIFO
+                // info!("port {} read data_reg", port);
                 let mut fifo = self.fifo.lock();
                 if fifo.is_empty() {
                     0
                 } else {
-                    fifo.pop()
+                    let c = fifo.pop();
+                    c
                 }
             }
             LINE_STATUS_REG => {
+                
                 // check if the physical serial port has an available byte, and push it to FIFO.
                 let mut fifo = self.fifo.lock();
-                if !fifo.is_full() {
-                    if let Some(c) = uart::getchar() {
-                        fifo.push(c);
+                let int_en = self.int_en.lock();
+                // info!("port {} read lrs, num: {}", port, fifo.num);
+                if *int_en == 0 {
+                    if !fifo.is_full() {
+                        if let Some(c) = uart::getchar() {
+                            fifo.push(c);
+                        }
                     }
-                }
+                } 
+                
                 let mut lsr = LineStsFlags::OUTPUT_EMPTY;
                 if !fifo.is_empty() {
                     lsr |= LineStsFlags::INPUT_FULL;
@@ -121,9 +135,43 @@ impl PortIoDevice for Uart16550 {
             error!("Invalid serial port I/O write size: {} != 1", access_size);
             return Err(HyperError::InvalidParam);
         }
+        
         match port - self.port_base {
-            DATA_REG => uart::putchar(value as u8),
-            INT_EN_REG | FIFO_CTRL_REG | LINE_CTRL_REG | MODEM_CTRL_REG | SCRATCH_REG => {
+            DATA_REG => {
+                let int_en = self.int_en.lock();
+                
+                if *int_en == 1 {
+                    // info!("port {} write {}", port,value);
+                    for i in 0..MAX_VMS {
+                        if i == self.id {
+                            // not print self
+                            continue;
+                        }
+                        // info!("port {} write {}_12", port,value);
+                        if let Some(uart) = all_virt_devices(i).find_uart(port) {
+                            // other vm with same baud_rate
+                            if uart.baud_rate == self.baud_rate {
+                                let mut fifo: spin::MutexGuard<'_, Fifo<UART_FIFO_CAPACITY>> = uart.fifo.lock();
+                                
+                                if !fifo.is_full() {
+                                    // info!("port {} write fifo {:#?}", port, fifo.num);
+                                    fifo.push(value as u8);
+                                }
+                            }
+                            
+                        }
+                    }
+                    
+                } else {
+                    uart::putchar(value as u8);
+                }
+                
+            }
+            INT_EN_REG => {
+                let mut int_en = self.int_en.lock();
+                *int_en = value as u8;
+            }
+            FIFO_CTRL_REG | LINE_CTRL_REG | MODEM_CTRL_REG | SCRATCH_REG => {
                 info!("Unimplemented serial port I/O write: {:#x}", port); // unimplemented
             }
             LINE_STATUS_REG => {} // ignore
@@ -131,13 +179,18 @@ impl PortIoDevice for Uart16550 {
         }
         Ok(())
     }
+    
 }
 
 impl Uart16550 {
-    pub const fn new(port_base: u16) -> Self {
+    pub const fn new(port_base: u16, id: usize) -> Self {
         Self {
             port_base,
             fifo: Mutex::new(Fifo::new()),
+            id: id,
+            int_en: Mutex::new(0),
+            baud_rate: 115200
         }
     }
+    
 }

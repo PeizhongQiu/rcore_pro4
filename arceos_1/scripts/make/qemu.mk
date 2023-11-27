@@ -12,8 +12,8 @@ ifeq ($(ARCH), riscv64)
   GUEST_BIOS ?=
 else ifeq ($(ARCH), x86_64)
   GUEST_DTB ?= 
-  GUEST_BIN ?= apps/hv/guest/nimbos/nimbos.bin
-  GUEST_BIOS ?= apps/hv/guest/nimbos/rvm-bios.bin
+  GUEST_BIN ?= apps/hv_mul_config/guest/nimbos/nimbos.bin
+  GUEST_BIOS ?= apps/hv_mul_config/guest/nimbos/rvm-bios.bin
   GUEST_CONFIG ?= apps/hv_mul_config/guest/nimbos/config.bin
 else ifeq ($(ARCH), aarch64)
   ROOTFS = apps/hv/guest/$(GUEST)/rootfs-aarch64.img

@@ -67,7 +67,7 @@ fn main(hart_id: usize) {
     }
 
     println!("Hello, main task!");
-    while FINISHED_TASKS.load(Ordering::Relaxed) < NUM_VM {
+    while FINISHED_TASKS.load(Ordering::Relaxed) < num_vm {
         thread::yield_now();
     }
     println!("Task yielding tests run OK!");

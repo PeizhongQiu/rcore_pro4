@@ -15,7 +15,7 @@
 //! - `display`: Enable graphics support.
 //!
 //! All the features are optional and disabled by default.
-
+#![feature(trait_upcasting)]
 #![cfg_attr(not(test), no_std)]
 #![feature(doc_auto_cfg)]
 

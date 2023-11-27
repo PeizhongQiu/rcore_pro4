@@ -19,7 +19,7 @@ use crate::arch::{msr::Msr, memory::NestedPageFaultInfo, regs::GeneralRegisters}
 use crate::arch::lapic::ApicTimer;
 use crate::{GuestPhysAddr, HostPhysAddr, HyperCraftHal, HyperResult};
 
-const PREEMPTION_TIMER_VALUE: u32 = 50000000; 
+const PREEMPTION_TIMER_VALUE: u32 = 80000000; 
 
 /// A virtual CPU within a guest.
 #[repr(C)]
